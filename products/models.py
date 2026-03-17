@@ -1,4 +1,5 @@
 from django.db import models
+from decimal import Decimal
 from django.conf import settings
 from django.utils.translation import gettext_lazy as _
 from django.utils import timezone
@@ -67,8 +68,60 @@ class Order(models.Model):
     created_at = models.DateTimeField(_('created at'), auto_now_add=True)
     updated_at = models.DateTimeField(_('updated at'), auto_now=True)
 
+    iva_porcentaje = models.DecimalField(max_digits=5, decimal_places=2, default=21.00)
+    total_base = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    total_iva = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    total_pedido = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+
     class Meta:
         ordering = ['-created_at']
+        verbose_name = _('order')
+        verbose_name_plural = _('orders')
 
     def __str__(self):
-        return f"Order {self.id} - {self.user} ({self.status})"
+        return f"Order #{self.id} - {self.get_status_display()}"
+    
+    @property
+    def total_amount(self):
+        return sum(item.total_price for item in self.items.all())
+    
+    def calcular_totales(self):
+        """Calcula base, IVA y total sumando las líneas."""
+        base = sum(item.total_price for item in self.items.all())
+        self.total_base = Decimal(base)
+        self.total_iva = self.total_base * (Decimal(str(self.iva_porcentaje)) / 100)
+        self.total_pedido = self.total_base + self.total_iva
+        self.save()
+    
+    def confirmar_pedido(self):
+        """Lógica de transición de estado."""
+        if self.items.count() == 0:
+            raise ValueError("No se puede confirmar un pedido sin líneas.")
+        if self.status != self.Status.PENDING:
+            raise ValueError("Solo se pueden confirmar pedidos en estado pendiente.")
+        
+        self.status = self.Status.PROCESSING
+        self.save()
+
+class OrderItem(models.Model):
+    order = models.ForeignKey(
+        Order,
+        on_delete=models.CASCADE,
+        related_name='items',
+        verbose_name=_('order')
+    )
+    product = models.ForeignKey(
+        Product,
+        on_delete=models.CASCADE,
+        related_name='order_items',
+        verbose_name=_('product')
+    )
+    quantity = models.PositiveIntegerField(_('quantity'), default=1)
+    price = models.DecimalField(_('price'), max_digits=10, decimal_places=2)
+
+    def __str__(self):
+        return f"{self.quantity}x {self.product.name}"
+
+    @property
+    def total_price(self):
+        return Decimal(str(self.price)) * self.quantity
