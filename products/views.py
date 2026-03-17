@@ -13,6 +13,9 @@ class ProductCreateView(CreateView):
 from django.views.generic import ListView
 from django.contrib import messages
 from .models import Order
+import logging
+
+logger = logging.getLogger(__name__)
 
 class OrderListView(ListView):
     model = Order
@@ -21,10 +24,16 @@ class OrderListView(ListView):
     paginate_by = 10
 
 def get_queryset(self):
-    queryset = super().get_queryset()
-
-    # Filtro por búsqueda de cliente
-    search = self.request.GET.get('q')
-    if search:
-        queryset = queryset.filter(user__username__icontains=search)
-    return queryset.order_by('-created_at')
+    try:
+        queryset = super().get_queryset()
+        
+        # Filtro por búsqueda de cliente
+        search = self.request.GET.get('q')
+        if search:
+            queryset = queryset.filter(user__username__icontains=search)
+        
+        return queryset.order_by('-created_at')
+    except Exception:
+        logger.error("Error al obtener los pedidos.", exc_info=True)
+        messages.error(self.request, "No se encontraron pedidos.")
+        return Order.objects.none()
