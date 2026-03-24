@@ -119,9 +119,26 @@ class OrderItem(models.Model):
     quantity = models.PositiveIntegerField(_('quantity'), default=1)
     price = models.DecimalField(_('price'), max_digits=10, decimal_places=2)
 
+    class Meta:
+        verbose_name = _('order item')
+        verbose_name_plural = _('order items')
+
     def __str__(self):
         return f"{self.quantity}x {self.product.name}"
 
     @property
     def total_price(self):
-        return Decimal(str(self.price)) * self.quantity
+        return self.quantity * self.price
+    
+    def save(self, *args, **kwargs):
+        if not self.pk: # Only set price on creation
+            self.price = self.product.price
+        super().save(*args, **kwargs)
+
+class Factura(models.Model):
+    pedido = models.OneToOneField(Order, on_delete=models.CASCADE, related_name='factura')
+    numero_factura = models.CharField(max_length=20, unique=True)
+    fecha_emision = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return self.numero_factura
