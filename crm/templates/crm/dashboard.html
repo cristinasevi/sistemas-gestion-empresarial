@@ -1,0 +1,69 @@
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CRM – Dashboard</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; background: #f5f5f5; }
+        h1 { color: #333; }
+        .stats { display: flex; gap: 16px; margin-bottom: 24px; }
+        .stat-card { background: #fff; border-radius: 8px; padding: 20px 28px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); flex: 1; }
+        .stat-card .label { font-size: 0.85em; color: #666; text-transform: uppercase; letter-spacing: 0.05em; }
+        .stat-card .value { font-size: 2em; font-weight: bold; color: #007bff; margin-top: 4px; }
+        .card { background: #fff; border-radius: 8px; padding: 16px 20px; margin-bottom: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+        .card h3 { margin: 0 0 6px; color: #222; font-size: 1em; }
+        .card .meta { font-size: 0.85em; color: #555; }
+        .badge { display: inline-block; padding: 3px 10px; border-radius: 12px; font-size: 0.78em; font-weight: bold; }
+        .badge-PRO { background: #e2e3e5; color: #383d41; }
+        .badge-PRP { background: #cce5ff; color: #004085; }
+        .badge-NEG { background: #fff3cd; color: #856404; }
+        .badge-GAN { background: #d4edda; color: #155724; }
+        .badge-PER { background: #f8d7da; color: #842029; }
+        .text-danger { color: #dc3545; font-weight: bold; }
+        .text-success { color: #28a745; font-weight: bold; }
+        .right { text-align: right; }
+        .valor { font-size: 1.05em; font-weight: bold; color: #333; }
+    </style>
+</head>
+<body>
+    <h1>CRM — Pipeline de Oportunidades</h1>
+
+    <div class="stats">
+        <div class="stat-card">
+            <div class="label">Total oportunidades</div>
+            <div class="value">{{ total }}</div>
+        </div>
+        <div class="stat-card">
+            <div class="label">Cerradas ganadas</div>
+            <div class="value">{{ ganadas }}</div>
+        </div>
+        <div class="stat-card">
+            <div class="label">Tasa de conversión</div>
+            <div class="value">{{ tasa_conversion }}%</div>
+        </div>
+    </div>
+
+    {% for op in oportunidades %}
+    <div class="card">
+        <div>
+            <h3>{{ op.titulo }}</h3>
+            <div class="meta">
+                {{ op.cliente }} &nbsp;|&nbsp;
+                <span class="badge badge-{{ op.etapa }}">{{ op.get_etapa_display }}</span>
+            </div>
+        </div>
+        <div class="right">
+            <div class="valor">{{ op.valor_estimado }} {{ moneda }}</div>
+            <div class="meta">
+                Días en pipeline:
+                <span class="{% if op.dias_abierta > 30 %}text-danger{% else %}text-success{% endif %}">
+                    {{ op.dias_abierta }} días
+                </span>
+            </div>
+        </div>
+    </div>
+    {% empty %}
+    <p style="color: #888; text-align: center; padding: 40px;">No hay oportunidades registradas.</p>
+    {% endfor %}
+</body>
+</html>
