@@ -1,0 +1,14 @@
+services:
+
+  web:
+    build: .
+    restart: unless-stopped
+    env_file: .env
+    ports:
+      - "8001:8000"
+    volumes:
+      - ./db.sqlite3:/app/db.sqlite3
+      - static_files:/app/staticfiles
+
+volumes:
+  static_files:
